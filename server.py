@@ -2,66 +2,55 @@ import cfg
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+import json
+
 # Create a session
 client = BackendApplicationClient(client_id=cfg.client_id)
 oauth = OAuth2Session(client=client)
 
+start_time = "2023-04-15T00:00:00Z"
+end_time = "2023-07-15T00:00:00Z"
+
 # Get token for the session
-token = oauth.fetch_token(token_url='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token',
-                          client_secret=cfg.client_secret)
-
-# All requests using this session will have an access token automatically added
-
-# data = {
-#     "bbox": [13, 45, 14, 46],
-#     "datetime": "2019-12-10T00:00:00Z/2019-12-10T23:59:59Z",
-#     "collections": ["sentinel-1-grd"],
-#     "limit": 5,
-#     "next": 5,
-# }
-
-# url = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
-# resp = oauth.post(url, json=data)
-
-# print(resp.content)
-
+token = oauth.fetch_token(
+    token_url="https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
+    client_secret=cfg.client_secret,
+)
 evalscript = """
 //VERSION=3
 function setup() {
   return {
     input: ["B02", "B03", "B04"],
-    mosaicking: Mosaicking.ORBIT,
-    output: { id: "default", bands: 3 },
+    output: { bands: 3 },
   }
 }
 
-function updateOutputMetadata(scenes, inputMetadata, outputMetadata) {
-  outputMetadata.userData = { scenes: scenes.orbits }
-}
-
-function evaluatePixel(samples) {
-  return [2.5 * samples[1].B04, 2.5 * samples[1].B03, 2.5 * samples[1].B02]
+function evaluatePixel(sample) {
+  return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02]
 }
 """
 
 request = {
     "input": {
         "bounds": {
+            "properties": {"crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"},
             "bbox": [
                 13.822174072265625,
                 45.85080395917834,
                 14.55963134765625,
                 46.29191774991382,
-            ]
+            ],
         },
         "data": [
             {
-                "type": "sentinel-2-l2a",
+                "type": "sentinel-2-l1c",
                 "dataFilter": {
                     "timeRange": {
-                        "from": "2022-10-01T00:00:00Z",
-                        "to": "2022-10-31T00:00:00Z",
-                    }
+                        "from": start_time,
+                        "to": end_time,
+                    },
+                    "mosaickingOrder": "leastRecent",
                 },
             }
         ],
@@ -72,28 +61,44 @@ request = {
         "responses": [
             {
                 "identifier": "default",
-                "format": {"type": "image/jpeg"},
-            },
-            {
-                "identifier": "userdata",
-                "format": {"type": "application/json"},
-            },
+                "format": {"type": "image/png"},
+            }
         ],
     },
     "evalscript": evalscript,
 }
 
-url = "https://sh.dataspace.copernicus.eu/api/v1/process"
 
-response = oauth.post(url, json=request)
-if response.status_code == 200:
-    # The request was successful
-    content = response.content  # Get the response content
-    
-    if content:
-        with open("output_image.jpg", "wb") as file:
-            file.write(content)
-    
-    print("Response content has been saved as 'output_image.jpg'")
-else:
-    print(f"Request failed with status code: {response.status_code}")
+# Define the request handler class
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    # Handle POST requests
+    def do_POST(self):
+        self.send_response(200)  # Send 200 OK status code
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+
+        response = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=request)
+        if response.status_code == 200:
+            # The request was successful
+            content = response.content  # Get the response content
+
+            if content:
+                with open("output_image.jpg", "wb") as file:
+                    file.write(content)
+
+            print("Response content has been saved as 'output_image.jpg'")
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+
+        self.wfile.write(json.dumps({
+            'status': 'Downloaded'
+            }).encode('utf-8'))
+
+
+# Create an HTTP server with the request handler
+server_address = ('', 9500)  # Listen on all available interfaces, port 8700
+httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
+
+# Start the server
+print('Server running on port 9500...')
+httpd.serve_forever()
