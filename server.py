@@ -20,17 +20,24 @@ token = oauth.fetch_token(
     token_url="https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
     client_secret=cfg.client_secret,
 )
+
+# True Color, cloudy pixels masked out
+# https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process/Examples/S2L2A.html#true-color-cloudy-pixels-masked-out
 evalscript = """
 //VERSION=3
 function setup() {
   return {
-    input: ["B02", "B03", "B04"],
+    input: ["B02", "B03", "B04", "SCL"],
     output: { bands: 3 },
   }
 }
 
 function evaluatePixel(sample) {
-  return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02]
+  if ([8, 9, 10].includes(sample.SCL)) {
+    return [1, 0, 0]
+  } else {
+    return [2.5 * sample.B04, 2.5 * sample.B03, 2.5 * sample.B02]
+  }
 }
 """
 
@@ -39,15 +46,12 @@ copernicus_request = {
         "bounds": {
             "properties": {"crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"},
             "bbox": [
-                13.822174072265625,
-                45.85080395917834,
-                14.55963134765625,
-                46.29191774991382,
+                0,0,0,0
             ],
         },
         "data": [
             {
-                "type": "sentinel-2-l1c",
+                "type": "sentinel-2-l2a",
                 "dataFilter": {
                     "timeRange": {
                         "from": start_time,
