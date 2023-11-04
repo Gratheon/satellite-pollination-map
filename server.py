@@ -4,6 +4,7 @@ from requests_oauthlib import OAuth2Session
 
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 import json
+from urllib.parse import parse_qs
 
 # Create a session
 client = BackendApplicationClient(client_id=cfg.client_id)
@@ -31,7 +32,7 @@ function evaluatePixel(sample) {
 }
 """
 
-request = {
+copernicus_request = {
     "input": {
         "bounds": {
             "properties": {"crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"},
@@ -73,11 +74,28 @@ request = {
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     # Handle POST requests
     def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length).decode('utf-8')
+        post_params = parse_qs(post_data)
+
+        lat = post_params.get('lat', [None])[0]
+        lng = post_params.get('lng', [None])[0]
+
+        if(lat is None): 
+            self.send_response(400);
+            return
+        
+        if(lng is None):
+            self.send_response(400);
+            return
+
+        lat = float(lat)
+    
         self.send_response(200)  # Send 200 OK status code
         self.send_header('Content-type', 'application/json')
         self.end_headers()
 
-        response = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=request)
+        response = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=copernicus_request)
         if response.status_code == 200:
             # The request was successful
             content = response.content  # Get the response content
