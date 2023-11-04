@@ -1,9 +1,11 @@
 import cfg
+import pybase64
+import json
+
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
-import json
 from urllib.parse import parse_qs
 
 # Create a session
@@ -111,22 +113,30 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         response = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=copernicus_request)
+
         if response.status_code == 200:
             # The request was successful
             content = response.content  # Get the response content
-
             if content:
                 with open("output_image.jpg", "wb") as file:
                     file.write(content)
+                    
+                # Encode the image content as base64
+                image_base64 = pybase64.b64encode(content).decode('utf-8')
 
-            print("Response content has been saved as 'output_image.jpg'")
+                self.wfile.write(json.dumps({
+                    'status': 'Downloaded',
+                    'image_base64': image_base64
+                }).encode('utf-8'))
+            else:
+                self.wfile.write(json.dumps({'status': 'No image available'}).encode('utf-8'))
+
         else:
             print(f"Request failed with status code: {response.status_code}")
-
-        self.wfile.write(json.dumps({
-            'status': 'Downloaded'
+            self.wfile.write(json.dumps({
+                'status': 'Failed',
+                'error_code': response.status_code
             }).encode('utf-8'))
-
 
 # Create an HTTP server with the request handler
 server_address = ('', 9500)  # Listen on all available interfaces, port 8700
