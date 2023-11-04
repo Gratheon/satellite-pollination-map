@@ -76,21 +76,36 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length).decode('utf-8')
-        post_params = parse_qs(post_data)
 
-        lat = post_params.get('lat', [None])[0]
-        lng = post_params.get('lng', [None])[0]
-
-        if(lat is None): 
-            self.send_response(400);
+        try:
+            json_data = json.loads(post_data)
+        except json.JSONDecodeError:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Invalid JSON data'}).encode('utf-8'))
             return
-        
-        if(lng is None):
-            self.send_response(400);
+
+        lat = json_data.get('lat', None)
+        lng = json_data.get('lng', None)
+
+        if lat is None or lng is None:
+            self.send_response(400)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'Missing lat or lng parameter'}).encode('utf-8'))
             return
 
         lat = float(lat)
-    
+        lng = float(lng)
+
+        copernicus_request["input"]["bounds"]["bbox"] = [
+            lat-0.1,
+            lng-0.1,
+            lat+0.1,
+            lng+0.1,
+        ]
+        
         self.send_response(200)  # Send 200 OK status code
         self.send_header('Content-type', 'application/json')
         self.end_headers()
