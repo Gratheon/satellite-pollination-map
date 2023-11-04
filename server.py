@@ -71,9 +71,20 @@ copernicus_request = {
     "evalscript": evalscript,
 }
 
-
 # Define the request handler class
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        return super(SimpleHTTPRequestHandler, self).end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
     # Handle POST requests
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
