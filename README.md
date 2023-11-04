@@ -20,6 +20,18 @@ flowchart LR
 	satellite-pollination-map -- run inference --> ML[model with random forest]
 ```
 
+## Development
+You can run service natively
+```
+pip install -f requirements.txt
+python server.py
+```
+
+Or you can run it as a docker container
+```
+docker-compose -f docker-compose.dev.yml up
+```
+
 ### ML model 
 Trained on CASSINI image dataset + markup of PRIA polygon data for fields + MAAAMET for forests
 See [vegetation_classificator.ipynb](./vegetation_classificator.ipynb)

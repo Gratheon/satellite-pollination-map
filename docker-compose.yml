@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  satellite-pollination-map:
+    build: .
+    command: python3 /app/server.py
+    environment:
+      ENV_ID: prod
+    ports:
+      - 9500:9500
+    volumes:
+      - .:/app/
+    restart: always
+    tty: true
+    network_mode: host
+networks:
+  gratheon:
