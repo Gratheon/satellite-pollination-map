@@ -1,3 +1,4 @@
+import math
 import cfg
 import pybase64
 import json
@@ -12,8 +13,11 @@ from urllib.parse import parse_qs
 client = BackendApplicationClient(client_id=cfg.client_id)
 oauth = OAuth2Session(client=client)
 
+#mid april
 start_time = "2023-04-15T00:00:00Z"
-end_time = "2023-07-15T00:00:00Z"
+
+#mid sep
+end_time = "2023-09-15T00:00:00Z"
 
 # Get token for the session
 token = oauth.fetch_token(
@@ -57,7 +61,7 @@ copernicus_request = {
                         "from": start_time,
                         "to": end_time,
                     },
-                    "mosaickingOrder": "leastRecent",
+                    "mosaickingOrder": "leastCC",
                 },
             }
         ],
@@ -74,6 +78,27 @@ copernicus_request = {
     },
     "evalscript": evalscript,
 }
+
+def calculate_square_coordinates(latitude, longitude, radius_km):
+    # Radius of the Earth in kilometers
+    earth_radius = 6371.0
+
+    # Convert latitude and longitude from degrees to radians
+    lat_rad = math.radians(latitude)
+    lon_rad = math.radians(longitude)
+
+    # Calculate the angular distance
+    angular_distance = radius_km / earth_radius
+
+    # Calculate the latitude boundaries
+    lat_min = math.degrees(lat_rad - angular_distance)
+    lat_max = math.degrees(lat_rad + angular_distance)
+
+    # Calculate the longitude boundaries based on latitude
+    lon_min = math.degrees(lon_rad - angular_distance / math.cos(lat_rad))
+    lon_max = math.degrees(lon_rad + angular_distance / math.cos(lat_rad))
+
+    return [lon_min, lat_min , lon_max, lat_max]
 
 # Define the request handler class
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -116,12 +141,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         lat = float(lat)
         lng = float(lng)
 
-        copernicus_request["input"]["bounds"]["bbox"] = [
-            lat-0.1,
-            lng-0.1,
-            lat+0.1,
-            lng+0.1,
-        ]
+        copernicus_request["input"]["bounds"]["bbox"] = calculate_square_coordinates(lat, lng, 4)
+        # [
+        #     lat-0.04, # 1 degree is ~111 km, so we take 4.4km square
+        #     lng-0.1,
+        #     lat+0.04,
+        #     lng+0.1,
+        # ]
         
         self.send_response(200)  # Send 200 OK status code
         self.send_header('Content-type', 'application/json')
