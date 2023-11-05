@@ -5,9 +5,10 @@ import rasterio
 from rasterio.plot import reshape_as_image
 from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier
+import joblib
 
 
-model_path= Path('Results/model.pickle')
+model_path= Path('classifier.pkl')
 classified_path= Path('Results/classification_request.tif')
 
 class Classificator:
@@ -29,7 +30,8 @@ class Classificator:
         image= dataset.read()
         reshaped_img = reshape_as_image(image)
         img_shape= reshaped_img[:,:,0].shape
-        model= pickle.load(open(model_path, 'rb'))
+        #model= pickle.load(open(model_path, 'rb'))
+        model= joblib.load(model_path)
         prediction= model.predict(self.filename)
         self.save_as_image(prediction, img_shape)
         
