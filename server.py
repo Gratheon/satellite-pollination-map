@@ -65,6 +65,32 @@ class_names_en = [
 ]
 
 
+icons = [
+    "🟨", # "Crops",
+    "🟩", # "Winter wheat without undersowing",
+    "🟩", #"Mixture of legumes and grasses (30-80% legumes) - Summer barley without undersowing",
+    "🟩", #"Grassland dominated by grasses (at least 80% grasses)",
+    "🟨", #'Field peas, except "Mehis" (100% field peas)',
+    "🟨", #"Winter barley without undersowing",
+    "🟨", #"Winter rapeseed without undersowing",
+    "🟨", #"Spring wheat without undersowing",
+    "🟩", #"Red clover (100% clover) - Oats without undersowing",
+    "🟨", #"Field beans, except Jõgeva",
+    "🟩", #"Other grass mixtures",
+    "🟨", #"Rye, except Sangaste rye without undersowing",
+    "🟩", #"Red clover (clover 50-80%, other grasses 20-50%)",
+    "🟨", #"Buckwheat without undersowing",
+    "🟨", #"Oats with legumes undersown",
+    "🟨", #"Spring rapeseed without undersowing",
+    "🟨", #"Spring barley with legumes undersown",
+    "🟨", #"Maize",
+    "🟩", #"Common lucerne (lucerne 50-80%, other grasses 20-50%)",
+    "🟨", #"Winter oilseed rape without undersowing",
+    "🟩", #"Forest",
+    "🟦", #"Water",
+    "🟨", #"Built-up",
+]
+
 # True Color, cloudy pixels masked out
 # https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process/Examples/S2L2A.html#true-color-cloudy-pixels-masked-out
 evalscript = """
@@ -233,6 +259,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 json.dumps(
                     {
                         "class_names_en": class_names_en,
+                        "icons": icons,
                         "apr": apr_base64,
                         "may": may_base64,
                         "jun": jun_base64,
