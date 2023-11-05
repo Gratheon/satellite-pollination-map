@@ -193,43 +193,48 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         lat = float(lat)
         lng = float(lng)
 
-        # mid april
-        start_time = "2023-04-15T00:00:00Z"
-
-        # mid sep
-        end_time = "2023-09-15T00:00:00Z"
-
-        copernicus_request = construct_copernicus_request(
-            lat, lng, start_time, end_time
-        )
-
         self.send_response(200)  # Send 200 OK status code
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
-        response = oauth.post(
-            "https://sh.dataspace.copernicus.eu/api/v1/process", json=copernicus_request
+        apr_request = construct_copernicus_request(
+            lat, lng, "2023-04-01T00:00:00Z", "2023-04-29T00:00:00Z"
+        )
+        may_request = construct_copernicus_request(
+            lat, lng, "2023-05-01T00:00:00Z", "2023-05-29T00:00:00Z"
+        )
+        jun_request = construct_copernicus_request(
+            lat, lng, "2023-06-01T00:00:00Z", "2023-06-29T00:00:00Z"
         )
 
-        if response.status_code == 200:
+        apr_response = oauth.post(
+            "https://sh.dataspace.copernicus.eu/api/v1/process", json=apr_request
+        )
+        may_response = oauth.post(
+            "https://sh.dataspace.copernicus.eu/api/v1/process", json=may_request
+        )
+        jun_response = oauth.post(
+            "https://sh.dataspace.copernicus.eu/api/v1/process", json=jun_request
+        )
+
+        if apr_response.status_code == 200:
             # The request was successful
-            content = response.content  # Get the response content
-            if content:
-                with open("output_image.jpg", "wb") as file:
-                    file.write(content)
+            # content = apr_response.content
+            # with open("output_image.jpg", "wb") as file:
+            #     file.write(content)
 
-                # Encode the image content as base64
-                image_base64 = pybase64.b64encode(content).decode("utf-8")
+            # Encode the image content as base64
+            apr_base64 = pybase64.b64encode(apr_response.content).decode("utf-8")
+            may_base64 = pybase64.b64encode(may_response.content).decode("utf-8")
+            jun_base64 = pybase64.b64encode(jun_response.content).decode("utf-8")
 
-                self.wfile.write(
-                    json.dumps(
-                        {"status": "Downloaded", "image_base64": image_base64}
-                    ).encode("utf-8")
-                )
-            else:
-                self.wfile.write(
-                    json.dumps({"status": "No image available"}).encode("utf-8")
-                )
+            self.wfile.write(
+                json.dumps({"status": "Downloaded", 
+                            "apr": apr_base64,
+                            "may": may_base64,
+                            "jun": jun_base64,
+                            }).encode("utf-8")
+            )
 
         else:
             print(f"Request failed with status code: {response.status_code}")
