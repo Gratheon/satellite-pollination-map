@@ -61,7 +61,7 @@ class_names_en = [
     "Winter oilseed rape without undersowing",
     "Forest",
     "Water",
-    "Built-up",
+    "Buildings",
 ]
 
 
@@ -88,7 +88,7 @@ icons = [
     "🟨", #"Winter oilseed rape without undersowing",
     "🟩", #"Forest",
     "🟦", #"Water",
-    "🟨", #"Built-up",
+    "⬛", #"Built-up",
 ]
 
 # True Color, cloudy pixels masked out
