@@ -13,7 +13,7 @@ classified_path= Path('Results/classification_request.tif')
 
 class Classificator:
     def __init__(self, args=None):
-        self.filename=None
+        self.filename='test_area.tif'
         self.parseargs(args)
         self.image_profile= None
     
@@ -27,12 +27,14 @@ class Classificator:
     def execute(self):
         dataset = rasterio.open(self.filename)
         self.image_profile= dataset.profile
+        print('image profile: ', self.image_profile)
         image= dataset.read()
-        reshaped_img = reshape_as_image(image)
+        raster = rasterio.open(self.filename).read()
+        reshaped_img = reshape_as_image(raster)
         img_shape= reshaped_img[:,:,0].shape
-        #model= pickle.load(open(model_path, 'rb'))
+        img_data = reshaped_img.reshape(-1, 10)
         model= joblib.load(model_path)
-        prediction= model.predict(self.filename)
+        prediction= model.predict(img_data)
         self.save_as_image(prediction, img_shape)
         
     def save_as_image(self, prediction, shape):
