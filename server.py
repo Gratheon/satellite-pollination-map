@@ -64,15 +64,6 @@ class_names_en = [
     "Built-up",
 ]
 
-# Create a session
-client = BackendApplicationClient(client_id=cfg.client_id)
-oauth = OAuth2Session(client=client)
-
-# Get token for the session
-token = oauth.fetch_token(
-    token_url="https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
-    client_secret=cfg.client_secret,
-)
 
 # True Color, cloudy pixels masked out
 # https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process/Examples/S2L2A.html#true-color-cloudy-pixels-masked-out
@@ -207,6 +198,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             lat, lng, "2023-06-01T00:00:00Z", "2023-06-29T00:00:00Z"
         )
 
+        # Create a session
+        client = BackendApplicationClient(client_id=cfg.client_id)
+        oauth = OAuth2Session(client=client)
+
+        # Get token for the session
+        token = oauth.fetch_token(
+            token_url="https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
+            client_secret=cfg.client_secret,
+        )
+
         apr_response = oauth.post(
             "https://sh.dataspace.copernicus.eu/api/v1/process", json=apr_request
         )
@@ -229,11 +230,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             jun_base64 = pybase64.b64encode(jun_response.content).decode("utf-8")
 
             self.wfile.write(
-                json.dumps({"status": "Downloaded", 
-                            "apr": apr_base64,
-                            "may": may_base64,
-                            "jun": jun_base64,
-                            }).encode("utf-8")
+                json.dumps(
+                    {
+                        "class_names_en": class_names_en,
+                        "apr": apr_base64,
+                        "may": may_base64,
+                        "jun": jun_base64,
+                    }
+                ).encode("utf-8")
             )
 
         else:
