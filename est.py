@@ -1,6 +1,6 @@
 
 import argparse
-import pickle
+import numpy as np
 import rasterio
 from rasterio.plot import reshape_as_image
 from pathlib import Path
@@ -13,7 +13,7 @@ classified_path= Path('Results/classification_request.tif')
 
 class Classificator:
     def __init__(self, args=None):
-        self.filename=None
+        self.filename='test_area.tif'
         self.parseargs(args)
         self.image_profile= None
     
@@ -27,13 +27,16 @@ class Classificator:
     def execute(self):
         dataset = rasterio.open(self.filename)
         self.image_profile= dataset.profile
+        print('image profile: ', self.image_profile)
         image= dataset.read()
-        reshaped_img = reshape_as_image(image)
+        raster = rasterio.open(self.filename).read()
+        reshaped_img = reshape_as_image(raster)
         img_shape= reshaped_img[:,:,0].shape
-        #model= pickle.load(open(model_path, 'rb'))
+        img_data = reshaped_img.reshape(-1, 10)
         model= joblib.load(model_path)
-        prediction= model.predict(self.filename)
+        prediction= model.predict(img_data)
         self.save_as_image(prediction, img_shape)
+        self._count_pixels(classified_path)
         
     def save_as_image(self, prediction, shape):
         image = prediction.reshape(shape)
@@ -44,6 +47,12 @@ class Classificator:
         with rasterio.open(classified_path, 'w', **profile) as dst:
             dst.write(image.astype(rasterio.uint8),1)
         return image
+    
+    def _count_pixels(self, image_path):
+        image = rasterio.open(image_path).read()
+        unique, counts = np.unique(image, return_counts=True)
+        print('unique: ', unique.real, 'counts: ', counts)
+        return dict(zip(unique, counts))
     
 if __name__ == "__main__":
     arguments= argparse.ArgumentParser()
