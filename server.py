@@ -13,12 +13,6 @@ from urllib.parse import parse_qs
 client = BackendApplicationClient(client_id=cfg.client_id)
 oauth = OAuth2Session(client=client)
 
-#mid april
-start_time = "2023-04-15T00:00:00Z"
-
-#mid sep
-end_time = "2023-09-15T00:00:00Z"
-
 # Get token for the session
 token = oauth.fetch_token(
     token_url="https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
@@ -44,40 +38,38 @@ function evaluatePixel(sample) {
   }
 }
 """
-
-copernicus_request = {
-    "input": {
-        "bounds": {
-            "properties": {"crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"},
-            "bbox": [
-                0,0,0,0
+def construct_copernicus_request(lat, lng, start_time, end_time):
+    return {
+        "input": {
+            "bounds": {
+                "properties": {"crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"},
+                "bbox": calculate_square_coordinates(lat, lng, 3),
+            },
+            "data": [
+                {
+                    "type": "sentinel-2-l2a",
+                    "dataFilter": {
+                        "timeRange": {
+                            "from": start_time,
+                            "to": end_time,
+                        },
+                        "mosaickingOrder": "leastCC",
+                    },
+                }
             ],
         },
-        "data": [
-            {
-                "type": "sentinel-2-l2a",
-                "dataFilter": {
-                    "timeRange": {
-                        "from": start_time,
-                        "to": end_time,
-                    },
-                    "mosaickingOrder": "leastCC",
-                },
-            }
-        ],
-    },
-    "output": {
-        "width": 512,
-        "height": 512,
-        "responses": [
-            {
-                "identifier": "default",
-                "format": {"type": "image/png"},
-            }
-        ],
-    },
-    "evalscript": evalscript,
-}
+        "output": {
+            "width": 512,
+            "height": 512,
+            "responses": [
+                {
+                    "identifier": "default",
+                    "format": {"type": "image/png"},
+                }
+            ],
+        },
+        "evalscript": evalscript,
+    }
 
 def calculate_square_coordinates(latitude, longitude, radius_km):
     # Radius of the Earth in kilometers
@@ -141,14 +133,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         lat = float(lat)
         lng = float(lng)
 
-        copernicus_request["input"]["bounds"]["bbox"] = calculate_square_coordinates(lat, lng, 4)
-        # [
-        #     lat-0.04, # 1 degree is ~111 km, so we take 4.4km square
-        #     lng-0.1,
-        #     lat+0.04,
-        #     lng+0.1,
-        # ]
+        #mid april
+        start_time = "2023-04-15T00:00:00Z"
+
+        #mid sep
+        end_time = "2023-09-15T00:00:00Z"
+
+        copernicus_request = construct_copernicus_request(lat, lng, start_time, end_time)
         
+
         self.send_response(200)  # Send 200 OK status code
         self.send_header('Content-type', 'application/json')
         self.end_headers()
