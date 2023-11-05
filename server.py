@@ -9,6 +9,61 @@ from requests_oauthlib import OAuth2Session
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 
+
+# PRIA classes
+class_names = [
+    "Rohttaimed",
+    "Talinisu allakülvita",
+    "Liblikõieliste ja kõrreliste segu (30-80% liblikõielisi)" "Suvioder allakülvita",
+    "Kõrreliste rohumaa (vähemalt 80% kõrrelisi)",
+    'Põldhernes, v.a "Mehis" (100% põldhernest)',
+    "talioder allakülvita",
+    "taliraps allakülvita",
+    "suvinisu allakülvita",
+    "punane ristik (100% ristikut)"
+    "kaer allakülvita"
+    'põlduba, v.a "Jõgeva"'
+    "muu heintaimede segu",
+    "rukis, v.a sangaste rukis allakülvita"
+    "punane ristik (ristikut 50-80%, teisi heintaimi 20-50%)",
+    "tatar allakülvita"
+    "kaer liblikõieliste allakülviga"
+    "suviraps allakülvita"
+    "suvioder liblikõieliste allakülviga"
+    "mais",
+    "harilik lutsern (lutserni 50-80%, teisi heintaimi 20-50%)"
+    "talirüps allakülvita"
+    "forest"
+    "water"
+    "built_up",
+]
+
+class_names_en = [
+    "Crops",
+    "Winter wheat without undersowing",
+    "Mixture of legumes and grasses (30-80% legumes) - Summer barley without undersowing",
+    "Grassland dominated by grasses (at least 80% grasses)",
+    'Field peas, except "Mehis" (100% field peas)',
+    "Winter barley without undersowing",
+    "Winter rapeseed without undersowing",
+    "Spring wheat without undersowing",
+    "Red clover (100% clover) - Oats without undersowing",
+    "Field beans, except Jõgeva",
+    "Other grass mixtures",
+    "Rye, except Sangaste rye without undersowing",
+    "Red clover (clover 50-80%, other grasses 20-50%)",
+    "Buckwheat without undersowing",
+    "Oats with legumes undersown",
+    "Spring rapeseed without undersowing",
+    "Spring barley with legumes undersown",
+    "Maize",
+    "Common lucerne (lucerne 50-80%, other grasses 20-50%)",
+    "Winter oilseed rape without undersowing",
+    "Forest",
+    "Water",
+    "Built-up",
+]
+
 # Create a session
 client = BackendApplicationClient(client_id=cfg.client_id)
 oauth = OAuth2Session(client=client)
@@ -38,6 +93,8 @@ function evaluatePixel(sample) {
   }
 }
 """
+
+
 def construct_copernicus_request(lat, lng, start_time, end_time):
     return {
         "input": {
@@ -71,6 +128,7 @@ def construct_copernicus_request(lat, lng, start_time, end_time):
         "evalscript": evalscript,
     }
 
+
 def calculate_square_coordinates(latitude, longitude, radius_km):
     # Radius of the Earth in kilometers
     earth_radius = 6371.0
@@ -90,16 +148,16 @@ def calculate_square_coordinates(latitude, longitude, radius_km):
     lon_min = math.degrees(lon_rad - angular_distance / math.cos(lat_rad))
     lon_max = math.degrees(lon_rad + angular_distance / math.cos(lat_rad))
 
-    return [lon_min, lat_min , lon_max, lat_max]
+    return [lon_min, lat_min, lon_max, lat_max]
+
 
 # Define the request handler class
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', '*')
-        self.send_header('Access-Control-Allow-Headers', '*')
-        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "*")
+        self.send_header("Access-Control-Allow-Headers", "*")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
         return super(SimpleHTTPRequestHandler, self).end_headers()
 
     def do_OPTIONS(self):
@@ -108,45 +166,50 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     # Handle POST requests
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length).decode('utf-8')
+        content_length = int(self.headers["Content-Length"])
+        post_data = self.rfile.read(content_length).decode("utf-8")
 
         try:
             json_data = json.loads(post_data)
         except json.JSONDecodeError:
             self.send_response(400)
-            self.send_header('Content-type', 'application/json')
+            self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({'error': 'Invalid JSON data'}).encode('utf-8'))
+            self.wfile.write(json.dumps({"error": "Invalid JSON data"}).encode("utf-8"))
             return
 
-        lat = json_data.get('lat', None)
-        lng = json_data.get('lng', None)
+        lat = json_data.get("lat", None)
+        lng = json_data.get("lng", None)
 
         if lat is None or lng is None:
             self.send_response(400)
-            self.send_header('Content-type', 'application/json')
+            self.send_header("Content-type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({'error': 'Missing lat or lng parameter'}).encode('utf-8'))
+            self.wfile.write(
+                json.dumps({"error": "Missing lat or lng parameter"}).encode("utf-8")
+            )
             return
 
         lat = float(lat)
         lng = float(lng)
 
-        #mid april
+        # mid april
         start_time = "2023-04-15T00:00:00Z"
 
-        #mid sep
+        # mid sep
         end_time = "2023-09-15T00:00:00Z"
 
-        copernicus_request = construct_copernicus_request(lat, lng, start_time, end_time)
-        
+        copernicus_request = construct_copernicus_request(
+            lat, lng, start_time, end_time
+        )
 
         self.send_response(200)  # Send 200 OK status code
-        self.send_header('Content-type', 'application/json')
+        self.send_header("Content-type", "application/json")
         self.end_headers()
 
-        response = oauth.post("https://sh.dataspace.copernicus.eu/api/v1/process", json=copernicus_request)
+        response = oauth.post(
+            "https://sh.dataspace.copernicus.eu/api/v1/process", json=copernicus_request
+        )
 
         if response.status_code == 200:
             # The request was successful
@@ -154,28 +217,33 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if content:
                 with open("output_image.jpg", "wb") as file:
                     file.write(content)
-                    
-                # Encode the image content as base64
-                image_base64 = pybase64.b64encode(content).decode('utf-8')
 
-                self.wfile.write(json.dumps({
-                    'status': 'Downloaded',
-                    'image_base64': image_base64
-                }).encode('utf-8'))
+                # Encode the image content as base64
+                image_base64 = pybase64.b64encode(content).decode("utf-8")
+
+                self.wfile.write(
+                    json.dumps(
+                        {"status": "Downloaded", "image_base64": image_base64}
+                    ).encode("utf-8")
+                )
             else:
-                self.wfile.write(json.dumps({'status': 'No image available'}).encode('utf-8'))
+                self.wfile.write(
+                    json.dumps({"status": "No image available"}).encode("utf-8")
+                )
 
         else:
             print(f"Request failed with status code: {response.status_code}")
-            self.wfile.write(json.dumps({
-                'status': 'Failed',
-                'error_code': response.status_code
-            }).encode('utf-8'))
+            self.wfile.write(
+                json.dumps(
+                    {"status": "Failed", "error_code": response.status_code}
+                ).encode("utf-8")
+            )
+
 
 # Create an HTTP server with the request handler
-server_address = ('', 9500)  # Listen on all available interfaces, port 8700
+server_address = ("", 9500)  # Listen on all available interfaces, port 8700
 httpd = ThreadingHTTPServer(server_address, SimpleHTTPRequestHandler)
 
 # Start the server
-print('Server running on port 9500...')
+print("Server running on port 9500...")
 httpd.serve_forever()
