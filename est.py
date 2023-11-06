@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 
 
-model_path= Path('classifier.pkl')
+model_path= Path('classifier_model.pkl')
 classified_path= Path('Results/classification_request.tif')
 
 class Classificator:
