@@ -4,11 +4,12 @@ this microservice is fetching raw map data from Copernicus,
 then runs segmentation and classification
 
 
-To get CASSINI token, you need to:
+To use CASSINI API data via token, you need to:
 - [login/register into copernicus](https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&response_type=code&scope=openid&redirect_uri=https%3A//dataspace.copernicus.eu/account/confirmed/1)
 - [go to hub dashboard](https://shapps.dataspace.copernicus.eu/dashboard/#/)
 - [generate oauth token](https://shapps.dataspace.copernicus.eu/dashboard/#/account/settings)
 - Use tokens in code (cfg.py) as described in [API](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Overview/Authentication.html#python)
+- Make [API first requests](https://documentation.dataspace.copernicus.eu/notebook-samples/sentinelhub/introduction_to_SH_APIs.html), [Sentinel-2 in particular](https://documentation.dataspace.copernicus.eu/APIs/SentinelHub/Process/Examples/S2L2A.html)
 
 
 ### URLs
