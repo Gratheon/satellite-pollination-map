@@ -26,8 +26,7 @@ To use CASSINI API data tokens, you need to:
 
 ```mermaid
 flowchart LR
-    web-app("<a href='https://github.com/Gratheon/web-app'>web-app</a>\n:8080") -- POST / (to analyze Crop Map)--> satellite-pollination-map
-
+	web-app("<a href='https://github.com/Gratheon/web-app'>web-app</a>\n:8080") --"POST / (to analyze Crop Map)"--> satellite-pollination-map
 	satellite-pollination-map -- download image at coords X,Y--> sentinel
 	satellite-pollination-map -- run inference --> ML[model with random forest]
 ```
