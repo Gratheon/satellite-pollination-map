@@ -46,3 +46,7 @@ docker-compose -f docker-compose.dev.yml up
 ### ML model 
 Trained on CASSINI image dataset + markup of PRIA polygon data for fields + MAAAMET for forests
 See [vegetation_classificator.ipynb](./vegetation_classificator.ipynb)
+
+
+Model pickle file exceeds github 100mb limit so its stored here:
+https://drive.google.com/file/d/1EIy687IN95hYMr-QOugzQ5mjP6VOS2Jk/view?usp=drive_link
